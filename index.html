@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>圈叉游戏</title>
+    <style>
+        body {
+            padding: 0;
+            margin: 0;
+            height: 100vh;
+        }
+        
+        #app {
+            height: 100vh;
+        }
+        
+        .border {
+            width: 300px;
+            height: 300px;
+            border: 1px solid #000;
+            position: relative;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            flex-wrap: wrap;
+        }
+        
+        .box {
+            width: 100px;
+            height: 100px;
+            box-sizing: border-box;
+            border: 1px solid #000;
+            position: relative;
+        }
+        
+        .box.cross::after,
+        .box.circle::after {
+            position: absolute;
+            left: 0;
+            content: "o";
+            line-height: 100px;
+            text-align: center;
+            width: 100px;
+            height: 100px;
+            font-size: 5em;
+            color: yellowgreen;
+            animation: ani 0.5s forwards;
+        }
+        
+        .box.cross::after {
+            content: "x";
+            color: red;
+        }
+        
+        @keyframes ani {
+            0% {
+                opacity: 0;
+                transform: rotateY(645deg) scale(0);
+            }
+            100% {
+                opacity: 1;
+                transform: rotateY(0deg) scale(1);
+            }
+        }
+        
+        .title {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: rgba(0, 0, 0, 0);
+            z-index: 99;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .title .center {
+            width: 300px;
+            height: 500px;
+            background-color: #fff;
+            display: flex;
+            text-align: center;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .title .center span {
+            color: red;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+        
+        .fade-enter,
+        .fade-leave-to {
+            opacity: 0;
+        }
+        
+        .fade-enter-active,
+        .fade-leave-active {
+            transform: opacity .5s;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+
+        <div class="border">
+            <div class="box" v-for="(item,index) in sections" :key="index" @click="draw(index)" :class="{circle:item===1,cross:item===10}"></div>
+        </div>
+
+        <div class="user">
+
+            <ul>
+                <li>1.go to start</li>
+                <li v-for="(v,i) in userOpe" :key="i">{{i+2}}----{{v.name}}#{{v.count}}</li>
+            </ul>
+
+        </div>
+        <!-- 弹出层区域 -->
+        <transition name="fade">
+            <div class="title" v-if='checkWinner'>
+                <div class="center">
+                    <span>{{checkWinner}} Win!</span>
+                    <button @click="reset">Reset</button>
+                </div>
+            </div>
+        </transition>
+    </div>
+    <script src="./js/vue.js"></script>
+    <script>
+        var vm = new Vue({
+            el: "#app",
+            data() {
+                return {
+                    // 存储用户放置标志
+                    sections: [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    //计步器
+                    step: 0,
+                    //刚标记的标
+                    index: 0,
+                    //计数
+                    count: 0,
+                    //保存步骤
+                    userOpe: []
+                }
+            },
+            computed: {
+                //计算分数
+                status() {
+                    return [
+                        this.sections[0] + this.sections[1] + this.sections[2],
+                        this.sections[3] + this.sections[4] + this.sections[5],
+                        this.sections[6] + this.sections[7] + this.sections[8],
+                        this.sections[1] + this.sections[4] + this.sections[7],
+                        this.sections[2] + this.sections[5] + this.sections[8],
+                        this.sections[0] + this.sections[3] + this.sections[6],
+                        this.sections[0] + this.sections[4] + this.sections[8],
+                        this.sections[2] + this.sections[4] + this.sections[6]
+                    ];
+                },
+                //找出胜利者
+                checkWinner() {
+                    let winner;
+                    if (this.step >= 5) {
+                        //只有计步器到达5的时候才会有人赢
+                        winner =
+                            this.status.find(item => {
+                                //3|10就表示赢了 ，也有可能是平居
+                                return item === 3 || item === 30;
+                            }) || null;
+                    }
+                    if (winner === 3) {
+                        winner = "Circle";
+                    } else if (winner === 30) {
+                        winner = "Cross";
+                    } else if ((winner = null && this.step > 8)) {
+                        winner = "平居";
+                    }
+                    console.log(winner, this.step)
+                    return winner;
+                }
+            },
+            methods: {
+                //  点击
+                draw(index) {
+                    //判断当前坑位 是否空的
+                    if (this.sections[index] === 0) {
+                        //是空的就 可以打上标记
+                        this.$set(this.sections, index, this.step % 2 === 0 ? 1 : 10);
+                        //计步器
+                        this.index = index
+
+                        this.step++;
+                        this.userOpe.push({
+                            "name": "go to move",
+                            "count": this.step
+                        })
+                    }
+                },
+                reset() {
+                    this.step = 0;
+                    this.sections = [0, 0, 0, 0, 0, 0, 0, 0, 0]
+                    this.userOpe = []
+                }
+            }
+        })
+    </script>
+</body>
+
+</html>
